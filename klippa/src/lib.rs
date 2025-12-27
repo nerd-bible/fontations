@@ -965,9 +965,9 @@ pub struct SubsetState {
 #[derive(Debug, Error)]
 #[cfg_attr(
     feature = "wasm",
-    derive(tsify::Tsify, serde::Serialize, serde::Deserialize)
+    derive(tsify::Tsify, serde::Serialize)
 )]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub enum SubsetError {
     #[error("Invalid input gid {0}")]
     InvalidGid(String),
@@ -989,6 +989,9 @@ pub enum SubsetError {
 
     #[error("Subsetting table '{0}' failed")]
     SubsetTableError(Tag),
+
+    #[error("Could not read font {0}")]
+    ReadError(skrifa::raw::ReadError),
 }
 
 pub trait NameIdClosure {
@@ -1421,9 +1424,9 @@ fn parse_subset_flags(args: &Args) -> SubsetFlags {
 #[derive(Parser, Debug)]
 #[cfg_attr(
     feature = "wasm",
-    derive(serde::Serialize, serde::Deserialize, tsify::Tsify)
+    derive(serde::Deserialize, tsify::Tsify)
 )]
-#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
+#[cfg_attr(feature = "wasm", tsify(from_wasm_abi))]
 #[allow(non_snake_case)]
 pub struct Args {
     /// List of glyph ids
@@ -1522,35 +1525,15 @@ pub struct Args {
     pub num_iterations: Option<u32>,
 }
 
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen(js_name = subsetBytes))]
 pub fn subset_bytes(font_bytes: Vec<u8>, args: Args) -> Result<Vec<u8>, SubsetError> {
     let subset_flags = parse_subset_flags(&args);
-    let gids = match populate_gids(&args.gids.unwrap_or_default()) {
-        Ok(gids) => gids,
-        Err(e) => {
-            eprintln!("{e}");
-            std::process::exit(1);
-        }
-    };
-
-    let unicodes = match parse_unicodes(&args.unicodes.unwrap_or_default()) {
-        Ok(unicodes) => unicodes,
-        Err(e) => {
-            eprintln!("{e}");
-            std::process::exit(1);
-        }
-    };
-
+    let gids = populate_gids(&args.gids.unwrap_or_default())?;
+    let unicodes = parse_unicodes(&args.unicodes.unwrap_or_default())?;
     let font = FontRef::new(&font_bytes)
-        .unwrap_or_else(|err| panic!("Bytes are not font as font.\n{err}"));
+        .map_err(|e| SubsetError::ReadError(e))?;
     let drop_tables = match &args.drop_tables {
-        Some(drop_tables_input) => match parse_tag_list(drop_tables_input) {
-            Ok(drop_tables) => drop_tables,
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(1);
-            }
-        },
+        Some(drop_tables_input) => parse_tag_list(drop_tables_input)?,
         //default value: <https://github.com/harfbuzz/harfbuzz/blob/b5a65e0f20c30a7f13b2f6619479a6d666e603e0/src/hb-subset-input.cc#L46>
         None => {
             let default_drop_tables = [
@@ -1581,13 +1564,7 @@ pub fn subset_bytes(font_bytes: Vec<u8>, args: Args) -> Result<Vec<u8>, SubsetEr
     };
 
     let name_ids = match &args.name_IDs {
-        Some(name_ids_input) => match parse_name_ids(name_ids_input) {
-            Ok(name_ids) => name_ids,
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(1);
-            }
-        },
+        Some(name_ids_input) => parse_name_ids(name_ids_input)?,
         // default value: <https://github.com/harfbuzz/harfbuzz/blob/b5a65e0f20c30a7f13b2f6619479a6d666e603e0/src/hb-subset-input.cc#L43>
         None => {
             let mut default_name_ids = IntSet::<NameId>::empty();
@@ -1597,13 +1574,7 @@ pub fn subset_bytes(font_bytes: Vec<u8>, args: Args) -> Result<Vec<u8>, SubsetEr
     };
 
     let name_languages = match &args.name_languages {
-        Some(name_languages_input) => match parse_name_languages(name_languages_input) {
-            Ok(name_languages) => name_languages,
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(1);
-            }
-        },
+        Some(name_languages_input) => parse_name_languages(name_languages_input)?,
         // default value: https://github.com/harfbuzz/harfbuzz/blob/main/src/hb-subset-input.cc#L44
         None => {
             let mut default_name_languages = IntSet::<u16>::empty();
@@ -1613,13 +1584,7 @@ pub fn subset_bytes(font_bytes: Vec<u8>, args: Args) -> Result<Vec<u8>, SubsetEr
     };
 
     let layout_scripts = match &args.layout_scripts {
-        Some(layout_scripts_input) => match parse_tag_list(layout_scripts_input) {
-            Ok(layout_scripts) => layout_scripts,
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(1);
-            }
-        },
+        Some(layout_scripts_input) => parse_tag_list(layout_scripts_input)?,
         // default value: <https://github.com/harfbuzz/harfbuzz/blob/021b44388667903d7bc9c92c924ad079f13b90ce/src/hb-subset-input.cc#L189>
         None => {
             let mut default_layout_scripts = IntSet::<Tag>::empty();
@@ -1629,13 +1594,7 @@ pub fn subset_bytes(font_bytes: Vec<u8>, args: Args) -> Result<Vec<u8>, SubsetEr
     };
 
     let layout_features = match &args.layout_features {
-        Some(layout_features_input) => match parse_tag_list(layout_features_input) {
-            Ok(layout_features) => layout_features,
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(1);
-            }
-        },
+        Some(layout_features_input) => parse_tag_list(layout_features_input)?,
         // default value: <https://github.com/harfbuzz/harfbuzz/blob/021b44388667903d7bc9c92c924ad079f13b90ce/src/hb-subset-input.cc#L82>
         None => {
             let mut default_layout_features = IntSet::<Tag>::empty();
@@ -1657,15 +1616,7 @@ pub fn subset_bytes(font_bytes: Vec<u8>, args: Args) -> Result<Vec<u8>, SubsetEr
             &name_ids,
             &name_languages,
         );
-        match subset_font(&font, &plan) {
-            Ok(out) => {
-                output_bytes = out;
-            }
-            Err(e) => {
-                eprintln!("{e}");
-                std::process::exit(1);
-            }
-        };
+        output_bytes = subset_font(&font, &plan)?;
     }
     return Ok(output_bytes);
 }

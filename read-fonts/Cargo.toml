@@ -31,12 +31,16 @@ spec_next = []
 default = ["std"]
 serde = ["dep:serde", "font-types/serde"]
 libm = ["dep:core_maths"]
+wasm = ["serde", "dep:serde-wasm-bindgen", "dep:wasm-bindgen", "dep:tsify"]
 
 [dependencies]
 font-types = { workspace = true, features = ["bytemuck"] }
 serde = { workspace = true, optional = true }
 core_maths = { workspace = true, optional = true }
 bytemuck = { workspace = true }
+tsify = { workspace = true, optional = true }
+serde-wasm-bindgen = { workspace = true, optional = true }
+wasm-bindgen = { workspace = true, optional = true }
 
 [dev-dependencies]
 font-test-data = { workspace = true }

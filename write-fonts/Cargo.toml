@@ -21,6 +21,7 @@ read = []
 dot2 = ["dep:dot2"]
 serde = ["dep:serde", "font-types/serde", "read-fonts/serde"]
 ift = ["read-fonts/ift"]
+wasm = ["serde", "read-fonts/wasm"]
 
 [dependencies]
 font-types = { workspace = true }

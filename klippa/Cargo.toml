@@ -13,7 +13,7 @@ repository.workspace = true
 [features]
 default = []
 serde = ["dep:serde"]
-wasm = ["serde", "dep:serde-wasm-bindgen", "dep:wasm-bindgen", "dep:tsify"]
+wasm = ["serde", "dep:serde-wasm-bindgen", "dep:wasm-bindgen", "dep:tsify", "skrifa/wasm", "write-fonts/wasm"]
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }

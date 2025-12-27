@@ -29,7 +29,13 @@ fn main() {
 
     let font_bytes = std::fs::read(&args.path)
         .unwrap_or_else(|err| panic!("Failed to read file {path:?}.\n{err}", path = &args.path));
-    let bytes = subset_bytes(font_bytes, args.args).unwrap();
+    let bytes = match subset_bytes(font_bytes, args.args) {
+        Ok(bytes) => bytes,
+        Err(e) => {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+    };
 
     std::fs::write(&args.output_file, bytes).unwrap_or_else(|err| {
         panic!(
