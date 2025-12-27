@@ -10,6 +10,10 @@ license.workspace = true
 repository.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = []
+serde = ["dep:serde"]
+wasm = ["serde", "dep:serde-wasm-bindgen", "dep:wasm-bindgen", "dep:tsify"]
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
@@ -19,13 +23,10 @@ regex = "1.10.4"
 skrifa = { workspace = true }
 thiserror = "1.0.58"
 write-fonts = { workspace = true, features = ["read", "serde"] }
-serde = { version = "1.0", features = ["derive"], optional = true }
-tsify = { version = "0.5.5", features = ["js"] }
-serde-wasm-bindgen = "0.4"
-wasm-bindgen = "0.2.106"
-
-[features]
-default = ["serde"]
+serde = { workspace = true, optional = true }
+tsify = { workspace = true, optional = true }
+serde-wasm-bindgen = { workspace = true, optional = true }
+wasm-bindgen = { workspace = true, optional = true }
 
 [dev-dependencies]
 diff = "0.1.13"

@@ -47,13 +47,10 @@ pub use parsing_util::{
 
 use clap::Parser;
 use fnv::FnvHashMap;
-use serde;
 use serialize::SerializeErrorFlags;
 use serialize::Serializer;
 use skrifa::MetadataProvider;
 use thiserror::Error;
-use tsify::Tsify;
-use wasm_bindgen::prelude::*;
 use write_fonts::read::tables::{ebdt, eblc, feat, svg};
 use write_fonts::types::GlyphId;
 use write_fonts::types::Tag;
@@ -965,8 +962,12 @@ pub struct SubsetState {
     has_gdef_varstore: bool,
 }
 
-#[derive(Debug, Error, Tsify, serde::Serialize, serde::Deserialize)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
+#[derive(Debug, Error)]
+#[cfg_attr(
+    feature = "wasm",
+    derive(tsify::Tsify, serde::Serialize, serde::Deserialize)
+)]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 pub enum SubsetError {
     #[error("Invalid input gid {0}")]
     InvalidGid(String),
@@ -1417,107 +1418,108 @@ fn parse_subset_flags(args: &Args) -> SubsetFlags {
     flags
 }
 
-#[derive(Parser, Debug, serde::Serialize, serde::Deserialize, Tsify)]
-#[tsify(into_wasm_abi, from_wasm_abi)]
+#[derive(Parser, Debug)]
+#[cfg_attr(feature = "wasm", derive(serde::Serialize, serde::Deserialize, tsify::Tsify))]
+#[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 #[allow(non_snake_case)]
 pub struct Args {
     /// List of glyph ids
     #[arg(short, long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub gids: Option<String>,
 
     /// List of Unicode codepoints
     #[arg(short, long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub unicodes: Option<String>,
 
     /// Drop the specified tables.
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub drop_tables: Option<String>,
 
     /// List of layout features tags that will be preserved
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub layout_features: Option<String>,
 
     /// List of layout script tags that will be preserved
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub layout_scripts: Option<String>,
 
     /// List of 'name' table entry nameIDs
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub name_IDs: Option<String>,
 
     /// List of 'name' table entry langIDs
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub name_languages: Option<String>,
 
     /// drop hints
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub no_hinting: bool,
 
     /// If set don't renumber glyph ids in the subset.
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub retain_gids: bool,
 
     /// Remove CFF/CFF2 use of subroutines
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub desubroutinize: bool,
 
     /// Keep legacy (non-Unicode) 'name' table entries
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub name_legacy: bool,
 
     /// Set the overlaps flag on each glyph
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub set_overlaps_flag: bool,
 
     /// Keep the outline of .notdef glyph
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub notdef_outline: bool,
 
     /// Don't change the 'OS/2 ulUnicodeRange*' bits
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub no_prune_unicode_ranges: bool,
 
     /// Don't perform glyph closure for layout substitution (GSUB)
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub no_layout_closure: bool,
 
     /// Keep PS glyph names in TT-flavored fonts
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub glyph_names: bool,
 
     /// Do not drop tables that the tool does not know how to subset
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub passthrough_tables: bool,
 
     /// Perform IUP delta optimization on the resulting gvar table's deltas
     #[arg(long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub optimize: bool,
 
     ///run subsetter N times
     #[arg(short, long)]
-    #[serde(default)]
+    #[cfg_attr(feature = "wasm", serde(default))]
     pub num_iterations: Option<u32>,
 }
 
-#[wasm_bindgen]
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 pub fn subset_bytes(font_bytes: Vec<u8>, args: Args) -> Result<Vec<u8>, SubsetError> {
     let subset_flags = parse_subset_flags(&args);
     let gids = match populate_gids(&args.gids.unwrap_or_default()) {
