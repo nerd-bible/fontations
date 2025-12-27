@@ -1335,7 +1335,7 @@ fn passthrough_table(tag: Tag, font: &FontRef<'_>, s: &mut Serializer) -> Result
     Ok(())
 }
 
-pub fn estimate_subset_table_size(font: &FontRef, table_tag: Tag, plan: &Plan) -> usize {
+fn estimate_subset_table_size(font: &FontRef, table_tag: Tag, plan: &Plan) -> usize {
     let Some(table_data) = font.data_for_tag(table_tag) else {
         return 0;
     };
@@ -1419,7 +1419,10 @@ fn parse_subset_flags(args: &Args) -> SubsetFlags {
 }
 
 #[derive(Parser, Debug)]
-#[cfg_attr(feature = "wasm", derive(serde::Serialize, serde::Deserialize, tsify::Tsify))]
+#[cfg_attr(
+    feature = "wasm",
+    derive(serde::Serialize, serde::Deserialize, tsify::Tsify)
+)]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi, from_wasm_abi))]
 #[allow(non_snake_case)]
 pub struct Args {
