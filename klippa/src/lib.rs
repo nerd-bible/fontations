@@ -34,6 +34,8 @@ mod stat;
 mod variations;
 mod vorg;
 mod vvar;
+#[cfg(feature = "wasm")]
+pub mod wasm;
 use crate::repack::resolve_overflows;
 use gdef::CollectUsedMarkSets;
 use inc_bimap::IncBiMap;
