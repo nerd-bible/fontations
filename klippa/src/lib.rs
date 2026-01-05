@@ -965,10 +965,7 @@ pub struct SubsetState {
 }
 
 #[derive(Debug, Error)]
-#[cfg_attr(
-    feature = "wasm",
-    derive(tsify::Tsify, serde::Serialize)
-)]
+#[cfg_attr(feature = "wasm", derive(tsify::Tsify, serde::Serialize))]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub enum SubsetError {
     #[error("Invalid input gid {0}")]
@@ -1424,10 +1421,7 @@ fn parse_subset_flags(args: &Args) -> SubsetFlags {
 }
 
 #[derive(Parser, Debug)]
-#[cfg_attr(
-    feature = "wasm",
-    derive(serde::Deserialize, tsify::Tsify)
-)]
+#[cfg_attr(feature = "wasm", derive(serde::Deserialize, tsify::Tsify))]
 #[cfg_attr(feature = "wasm", tsify(from_wasm_abi))]
 #[allow(non_snake_case)]
 pub struct Args {
@@ -1532,8 +1526,7 @@ pub fn subset_bytes(font_bytes: Vec<u8>, args: Args) -> Result<Vec<u8>, SubsetEr
     let subset_flags = parse_subset_flags(&args);
     let gids = populate_gids(&args.gids.unwrap_or_default())?;
     let unicodes = parse_unicodes(&args.unicodes.unwrap_or_default())?;
-    let font = FontRef::new(&font_bytes)
-        .map_err(|e| SubsetError::ReadError(e))?;
+    let font = FontRef::new(&font_bytes).map_err(|e| SubsetError::ReadError(e))?;
     let drop_tables = match &args.drop_tables {
         Some(drop_tables_input) => parse_tag_list(drop_tables_input)?,
         //default value: <https://github.com/harfbuzz/harfbuzz/blob/b5a65e0f20c30a7f13b2f6619479a6d666e603e0/src/hb-subset-input.cc#L46>

@@ -116,10 +116,7 @@ pub trait VarSize {
 
 /// An error that occurs when reading font data
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(
-    feature = "wasm",
-    derive(serde::Serialize, tsify::Tsify)
-)]
+#[cfg_attr(feature = "wasm", derive(serde::Serialize, tsify::Tsify))]
 #[cfg_attr(feature = "wasm", tsify(into_wasm_abi))]
 pub enum ReadError {
     OutOfBounds,
